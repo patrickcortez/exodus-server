@@ -1,7 +1,7 @@
 /*
  * COMPILE TO STATIC LIBRARY:
  * gcc -c ctz-json.c -o ctz-json.o -O2 -Wall
- * ar rcs libctzjson.a ctz-json.o
+ * ar rcs ctz-json.a ctz-json.o
  */
 
 #include "ctz-json.h"
