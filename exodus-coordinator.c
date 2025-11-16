@@ -186,7 +186,6 @@ void send_response(int sock_fd, const char* status_line, const char* content_typ
 }
 
 // --- Connection Handler Thread ---
-// --- REWRITE THIS ENTIRE FUNCTION in exodus-coordinator.c ---
 void* handle_connection(void* arg) {
     struct {
         int sock_fd;
@@ -197,11 +196,10 @@ void* handle_connection(void* arg) {
     free(arg); // Free the heap-allocated argument
 
     int sock_fd = conn_info.sock_fd;
-    char* buffer = malloc(MAX_HTTP_BODY_SIZE + 1024); // 50MB Buffer
+    char* buffer = malloc(MAX_HTTP_BODY_SIZE + 1024);//50mb Buffer
     if (!buffer) { close(sock_fd); return NULL; }
     char http_resp_buf[8192]; // For client requests
     
-    // Perform a single, large read. This is simple but assumes one packet.
     ssize_t n = read(sock_fd, buffer, MAX_HTTP_BODY_SIZE + 1023);
     if (n <= 0) {
         close(sock_fd);
@@ -210,35 +208,27 @@ void* handle_connection(void* arg) {
     }
     buffer[n] = '\0';
     
-    // --- PARSING FIX ---
+    // --- Parse Request ---
     char* saveptr_line;
-    char* method_path_line;
-    char* body = strstr(buffer, "\r\n\r\n");
-
-    if (body) {
-        *body = '\0'; // Temporarily terminate the header section
-        body += 4;    // Point body to the start of the actual content
-    }
-    
-    // Now, strtok will only run on the header section
-    method_path_line = strtok_r(buffer, "\r\n", &saveptr_line);
-    if (!method_path_line) {
+    char* first_line = strtok_r(buffer, "\r\n", &saveptr_line);
+    if (!first_line) {
         close(sock_fd);
         free(buffer);
         return NULL;
     }
 
-    char* method = strtok(method_path_line, " ");
-    char* path = strtok(NULL, " ");
+    char* saveptr_method; 
+    char* method = strtok_r(first_line, " ", &saveptr_method); 
+    char* path = strtok_r(NULL, " ", &saveptr_method);         
     if (!method || !path) {
         close(sock_fd);
         free(buffer);
         return NULL;
     }
-    // --- END PARSING FIX ---
-    
-    log_msg("Request: %s %s from %s", method, path, conn_info.ip_addr);
 
+    char* body = strstr(saveptr_line, "\r\n\r\n");
+    if (body) body += 4;
+    
     // --- Route: POST /register ---
     if (strcmp(method, "POST") == 0 && strcmp(path, "/register") == 0) {
         if (body) {
@@ -354,7 +344,6 @@ void* handle_connection(void* arg) {
                     } else {
                         send_response(sock_fd, "HTTP/1.1 504 Gateway Timeout", "application/json", "{\"error\":\"target unit did not accept sync\"}");
                     }
-                    free(http_req); // <-- Was missing this free
                     free(body_to_forward);
                 } else {
                     send_response(sock_fd, "HTTP/1.1 404 Not Found", "application/json", "{\"error\":\"target unit not found or offline\"}");
@@ -371,7 +360,6 @@ void* handle_connection(void* arg) {
     } else {
         send_response(sock_fd, "HTTP/1.1 404 Not Found", "application/json", "{\"error\":\"endpoint not found\"}");
     }
-    
     free(buffer);
     close(sock_fd);
     return NULL;
