@@ -97,13 +97,31 @@ int send_http_request(const char* host, int port, const char* request, char* res
         return -1;
     }
 
-    ssize_t n = read(sock_fd, response_buf, response_size - 1);
-    if (n >= 0) {
-        response_buf[n] = '\0';
-    } else {
-        log_msg("HTTP Client Error: Failed to read response");
-        close(sock_fd);
-        return -1;
+    size_t total_read = 0;
+    ssize_t n;
+    while (total_read < response_size - 1) {
+        // Read into the buffer *after* the data we already have
+        n = read(sock_fd, response_buf + total_read, (response_size - 1) - total_read);
+        
+        if (n < 0) {
+            // A real read error
+            log_msg("HTTP Client Error: Failed to read response: %s", strerror(errno));
+            close(sock_fd);
+            return -1;
+        }
+        
+        if (n == 0) {
+            // End of file (connection closed by server), this is the normal exit
+            break;
+        }
+        
+        total_read += n;
+    }
+    
+    response_buf[total_read] = '\0'; // Null-terminate the full response
+    
+    if (total_read == response_size - 1) {
+         log_msg("HTTP Client Warning: Response buffer may be full. Response might be truncated.");
     }
 
     close(sock_fd);
