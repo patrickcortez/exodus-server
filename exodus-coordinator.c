@@ -210,24 +210,29 @@ void* handle_connection(void* arg) {
     
     // --- Parse Request ---
     char* saveptr_line;
-    char* first_line = strtok_r(buffer, "\r\n", &saveptr_line);
-    if (!first_line) {
+    char* method_path_line;
+    char* body = strstr(buffer, "\r\n\r\n");
+
+    if (body) {
+        *body = '\0';
+        body += 4;    
+    }
+    
+    method_path_line = strtok_r(buffer, "\r\n", &saveptr_line);
+    if (!method_path_line) {
         close(sock_fd);
         free(buffer);
         return NULL;
     }
 
-    char* saveptr_method; 
-    char* method = strtok_r(first_line, " ", &saveptr_method); 
-    char* path = strtok_r(NULL, " ", &saveptr_method);         
+    char* saveptr_method;
+    char* method = strtok_r(method_path_line, " ", &saveptr_method);
+    char* path = strtok_r(NULL, " ", &saveptr_method);
     if (!method || !path) {
         close(sock_fd);
         free(buffer);
         return NULL;
     }
-
-    char* body = strstr(saveptr_line, "\r\n\r\n");
-    if (body) body += 4;
     
     // --- Route: POST /register ---
     if (strcmp(method, "POST") == 0 && strcmp(path, "/register") == 0) {
