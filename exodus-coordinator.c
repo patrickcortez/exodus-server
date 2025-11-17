@@ -281,7 +281,7 @@ void* handle_connection(void* arg) {
         ctz_json_free(root);
     
     // --- Route: GET /nodes?target_unit=... ---
-    } else if (strcmp(method, "GET") == 0 && strncmp(path, "/nodes?target_unit=", 20) == 0) {
+    } else if (strcmp(method, "GET") == 0 && strncmp(path, "/nodes?target_unit=", 19) == 0) {
         const char* target_name = path + 20;
         char target_ip[64];
         int target_port;
