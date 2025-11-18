@@ -379,7 +379,25 @@ void* handle_connection(void* arg) {
             send_response(sock_fd, "HTTP/1.1 400 Bad Request", "application/json", "{\"error\":\"missing body\"}");
         }
 
-    // --- Route: 404 Not Found (Default) ---
+    
+    } else if (strcmp(method, "GET") == 0 && strncmp(path, "/resolve?unit=", 14) == 0) {
+        const char* target_name = path + 14;
+        char target_ip[64];
+        int target_port;
+        
+        // Decode URL encoding (simple space replacement for now)
+        char decoded_name[128];
+        strncpy(decoded_name, target_name, sizeof(decoded_name)-1);
+        for(int i=0; decoded_name[i]; i++) if(decoded_name[i] == '+') decoded_name[i] = ' ';
+
+        if (find_unit(decoded_name, target_ip, sizeof(target_ip), &target_port) == 0) {
+            char json_resp[256];
+            snprintf(json_resp, sizeof(json_resp), "{\"ip\": \"%s\", \"port\": %d}", target_ip, target_port);
+            send_response(sock_fd, "HTTP/1.1 200 OK", "application/json", json_resp);
+        } else {
+            send_response(sock_fd, "HTTP/1.1 404 Not Found", "application/json", "{\"error\":\"unit not found\"}");
+        }
+        // --- Route: 404 Not Found (Default) ---
     } else {
         send_response(sock_fd, "HTTP/1.1 404 Not Found", "application/json", "{\"error\":\"endpoint not found\"}");
     }
