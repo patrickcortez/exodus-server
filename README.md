@@ -1,19 +1,37 @@
-This is exodus's coordinator which acts as the name suggests for units across your network.
+# Exodus
 
-[Set-up]
+This is **exodus coordinator** which acts as the name suggests for units across your network.
 
-Run the make file with:
+---
 
-- make
+## Set up
 
-Then patiently wait for all of it to compile, after compiling run:
+### 1. Compile Binaries
+
+``` bash
+
+make
+
+```
+
+### 2. Quick-Start
+
+``` bash
 
 ./exodus-coordinator
 
-To run the server, make sure you are running this on a homelab or a dedicated server
+```
 
-[Clean-up]
+Just make sure you're running this on a homelab or a dedicated server with a stable internet connection.
 
-To clean, Just run:
+---
 
-- make clean 
+
+
+## Clean up
+
+``` bash
+
+make clean
+
+```
